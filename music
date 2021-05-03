@@ -1,0 +1,56 @@
+import pprint
+import time
+import spotipy.oauth2
+from spotipy.oauth2 import SpotifyOAuth
+from pprint import pprint
+
+
+scope = 'user-read-currently-playing'
+spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope,
+                                                    client_id='20287a7bdc34425e8ef7d3734c03906d',
+                                                    client_secret='d004d8627e73418ba8156571a5cce83e',
+                                                    redirect_uri='http://localhost:8080',
+                                                    username='jlL4WqDHQseLu0uMDnuKVg'))
+
+
+def get_current_track(access_token):
+    response = spotify.current_user_playing_track()
+    resp_json = response
+
+    track_id = resp_json['item']['id']
+    track_name = resp_json['item']['name']
+    artists = resp_json['item']['artists']
+    cover_art = resp_json['item']['album']['images'][0]['url']
+    progress = resp_json['progress_ms']
+    duration = resp_json['item']['duration_ms']
+    artists_names = ', '.join(
+        [artist['name'] for artist in artists]
+    )
+    link = resp_json['item']['external_urls']['spotify']
+
+    current_track_info = {
+        "id": track_id,
+        "name": track_name,
+        "artists": artists_names,
+        "link": link,
+        "cover art": cover_art,
+        "progress": progress,
+        "duration": duration,
+        "timestamp": (duration - progress)
+
+    }
+
+    return current_track_info
+
+
+def main():
+    while True:
+        current_track_info = get_current_track(
+            spotify
+        )
+
+        pprint(current_track_info, indent=4)
+
+
+if __name__ == '__main__':
+    main()
