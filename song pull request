@@ -1,0 +1,73 @@
+import pprint
+import time
+import json
+import spotipy.oauth2
+from spotipy.oauth2 import SpotifyOAuth
+from pprint import pprint
+
+
+scope = 'user-read-currently-playing,user-modify-playback-state'
+spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope,
+                                                    client_id='20287a7bdc34425e8ef7d3734c03906d',
+                                                    client_secret='d004d8627e73418ba8156571a5cce83e',
+                                                    redirect_uri='http://localhost:8080',
+                                                    username='jlL4WqDHQseLu0uMDnuKVg'))
+
+devices = spotify.devices()
+print(json.dumps(devices, sort_keys=True, indent=4))
+deviceID = devices['devices'][0]['id']
+
+id = {
+    "id": deviceID
+}
+
+print(id)
+
+
+
+def get_current_track(access_token):
+    response = spotify.current_user_playing_track()
+    resp_json = response
+
+    track_id = resp_json['item']['id']
+    track_name = resp_json['item']['name']
+    artists = resp_json['item']['artists']
+    cover_art = resp_json['item']['album']['images'][0]['url']
+    progress = resp_json['progress_ms']
+    duration = resp_json['item']['duration_ms']
+    artists_names = ', '.join(
+            [artist['name'] for artist in artists]
+        )
+    link = resp_json['item']['external_urls']['spotify']
+    info = resp_json['item']
+
+    current_track_info = {
+            "id": track_id,
+            "name": track_name,
+            "artists": artists_names,
+            "link": link,
+            "cover art": cover_art,
+            "progress": progress,
+            "duration": duration,
+            "timestamp": (duration - progress),
+            "info": info
+
+        }
+
+    return current_track_info
+
+
+def main():
+
+        current_track_info = get_current_track(
+            spotify
+        )
+
+        pprint(current_track_info, indent=4)
+        spotify.current_user_playlists(limit=5)
+        spotify.next()
+
+
+if __name__ == '__main__':
+    main()
+
