@@ -1,0 +1,559 @@
+import sys
+from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QDesktopWidget
+from PyQt5 import QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtGui import QPixmap, QIcon, QBitmap, QPainter, QColor
+from PyQt5.QtCore import Qt, QTimer, QTime, QBasicTimer
+from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout, QVBoxLayout
+from PyQt5.QtWidgets import QPushButton
+from PyQt5.QtWidgets import *
+import urllib
+import time
+import sys
+import json
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
+from spotipy.oauth2 import SpotifyClientCredentials
+from sys import exit as sysExit
+import requests
+from pprint import pprint
+import webbrowser
+import array
+
+scope = 'user-read-currently-playing'
+spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope,
+                                                    client_id='20287a7bdc34425e8ef7d3734c03906d',
+                                                    client_secret='d004d8627e73418ba8156571a5cce83e',
+                                                    redirect_uri='http://localhost:8080'))
+
+devices = spotify.devices()
+print(json.dumps(devices, sort_keys=True, indent=4))
+deviceID = devices['devices'][0]['id']
+ID = {
+    "id": deviceID
+}
+print(ID)
+
+
+
+def get_current_track():
+    response = spotify.current_user_playing_track()
+    resp_json = response
+
+    track_name = resp_json['item']['name']
+    artists = resp_json['item']['artists']
+    cover_art = resp_json['item']['album']['images'][0]['url']
+    progress = resp_json['progress_ms']
+    uri = resp_json['item']['uri']
+    duration = resp_json['item']['duration_ms']
+    artists_names = ', '.join(
+        [artist['name'] for artist in artists]
+    )
+    link = resp_json['item']['external_urls']['spotify']
+
+    current_track_info = {
+
+        "name": track_name,
+        "artists": artists_names,
+        "link": link,
+        "cover art": cover_art,
+        "progress": progress,
+        "duration": duration,
+        "timestamp": (duration - progress),
+        "uri": uri
+
+    }
+
+    print(current_track_info)
+    return current_track_info
+
+
+def main():
+    while True:
+        current_track_info = get_current_track()
+
+        pprint(current_track_info, indent=4)
+
+
+class cssden(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        # <MainWindow Properties>
+        self.resize(260, 387)
+        self.setStyleSheet("QMainWindow{background-color: darkgray;border-radius: 3px}")
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_NoSystemBackground, True)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.center()
+        # </MainWindow Properties>
+
+        # </Central Widget>
+        self.centralwidget = QtWidgets.QWidget()
+        self.centralwidget.setObjectName("centralwidget")
+        # </Central Widget>
+
+        # </Layout>
+        self.drop_shadow_layout = QtWidgets.QVBoxLayout(self.centralwidget)
+        self.drop_shadow_layout.setContentsMargins(10, 10, 10, 10)
+        self.drop_shadow_layout.setSpacing(0)
+        self.drop_shadow_layout.setObjectName("drop_shadow_layout")
+        # </Layout>
+
+        # </Frame>
+        self.drop_shadow_frame = QtWidgets.QFrame(self.centralwidget)
+        self.drop_shadow_frame.setStyleSheet("background-color: rgba(104, 104, 104, 50);border-radius: 10px")
+        self.drop_shadow_frame.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.drop_shadow_frame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.drop_shadow_frame.setObjectName("drop_shadow_frame")
+        # </Frame>
+
+        # </Vertical Layout>
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.drop_shadow_frame)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout.setSpacing(0)
+        self.verticalLayout.setObjectName("verticalLayout")
+        # </Vertical Layout>
+
+        # </Frame Buttons>
+        self.frame_btns = QtWidgets.QFrame()
+        self.frame_btns.setGeometry(210, 0, 61, 31)
+        self.frame_btns.setMaximumSize(QtCore.QSize(100, 16777215))
+        self.frame_btns.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame_btns.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame_btns.setObjectName("frame_btns")
+        # </Frame Button>
+
+
+
+        # </Minimize Button>
+        self.btn_minimize = QtWidgets.QPushButton(self.frame_btns)
+        self.btn_minimize.setGeometry(QtCore.QRect(10, 10, 16, 16))
+        self.btn_minimize.setMinimumSize(QtCore.QSize(16, 16))
+        self.btn_minimize.setMaximumSize(QtCore.QSize(17, 17))
+        self.btn_minimize.setMouseTracking(True)
+        self.btn_minimize.setStyleSheet("QPushButton {\n"
+                                        "    border: none; \n"
+                                        "    border-radius: 8px;\n"
+                                        "    background-color: rgb(255, 170, 0);\n"
+                                        "}\n"
+                                        "QPushButton:hover {\n"
+                                        "    background-color: rgba(255, 170, 0, 150);\n"
+                                        "}")
+        self.btn_minimize.setText("")
+        self.btn_minimize.setObjectName("btn_minimize")
+        # </Minimize Button>
+
+        # </Content Bar>
+        self.content_bar = QtWidgets.QFrame(self.drop_shadow_frame)
+        self.content_bar.setStyleSheet("background-color:none")
+        self.content_bar.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.content_bar.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.content_bar.setObjectName("content_bar")
+        # </Content Bar>
+
+        # </Close Button>
+        self.btn_close = QtWidgets.QPushButton(self.content_bar)
+        self.btn_close.setGeometry(QtCore.QRect(215, 10, 16, 16))
+        self.btn_close.setMinimumSize(QtCore.QSize(16, 16))
+        self.btn_close.setMaximumSize(QtCore.QSize(17, 17))
+        self.btn_close.setMouseTracking(True)
+        self.btn_close.clicked.connect(self.CloseApp)
+        self.btn_close.setStyleSheet("QPushButton {\n"
+                                     "    border: none; \n"
+                                     "    border-radius: 8px;\n"
+                                     "    background-color: rgb(255, 0, 0);\n"
+                                     "}\n"
+                                     "QPushButton:hover {\n"
+                                     "    background-color: rgba(255, 0, 0, 150);\n"
+                                     "}")
+        self.btn_close.setText("")
+        self.btn_close.setObjectName("btn_close")
+        self.btn_close.show()
+        # </Close Button>
+
+        # </Label>
+        self.label = QtWidgets.QLabel(self.content_bar)
+        self.label.setGeometry(QtCore.QRect(20, 30, 201, 201))
+        self.label.setStyleSheet("border-radius: 8px;\n"
+                                 "border-color: rgb(0, 0, 0);\n"
+                                 "border: 1px solid black")
+        self.label.setObjectName("label")
+        # </Label>
+
+        # </Progress Bar>
+        current_track_info = get_current_track()
+        self.progressBar = QtWidgets.QProgressBar(self.content_bar)
+        track_info = get_current_track()
+        self.progressBar.setMaximum(track_info.get('duration'))
+        self.progressBar.setValue(0)
+        self.ptimer = QBasicTimer()
+        self.step = 0
+        self.progressBar.setGeometry(QtCore.QRect(10, 290, 221, 5))
+        self.progressBar.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
+        self.progressBar.setAutoFillBackground(False)
+        self.progressBar.setStyleSheet("QProgressBar{border-radius: 2px;\n"
+                                       "text-align: center;\n"
+                                       "border-style: none;\n"
+                                       "background-color: rgb(119, 119, 119);\n"
+                                       "}\n"
+                                       "\n"
+                                       "QProgressBar::chunk{border-radius:2px;\n"
+                                       "background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, "
+                                       "stop:0 rgba(255, 170, 0, 255), stop:1 rgba(170, 0, 255, 255));\n "
+                                       "}")
+        self.progressBar.setProperty("value", 30)
+        self.progressBar.setTextVisible(False)
+        self.progressBar.setInvertedAppearance(False)
+        self.progressBar.setObjectName("progressBar")
+
+        # </Progress Bar>
+
+        # </Command Link Buttons>
+        self.commandLinkButton = QtWidgets.QPushButton(self.content_bar)
+        self.commandLinkButton.setGeometry(QtCore.QRect(100, 310, 41, 41))
+        self.commandLinkButton.setText("")
+        self.commandLinkButton.setCheckable(True)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap("../../../Downloads/iconfinder_music_player_black-01_3695059.png"),
+                       QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.commandLinkButton.setIcon(icon)
+        self.commandLinkButton.setIconSize(QtCore.QSize(30, 30))
+        self.commandLinkButton.setObjectName("commandLinkButton")
+        self.commandLinkButton.clicked.connect(self.startProgress)
+        self.commandLinkButton.clicked.connect(self.clicked)
+
+        # </Command Link Button>
+
+        # </Command Link Button 2>
+        self.commandLinkButton_2 = QtWidgets.QPushButton(self.content_bar)
+        self.commandLinkButton_2.setGeometry(QtCore.QRect(160, 310, 41, 41))
+        self.commandLinkButton_2.setText("")
+        icon1 = QtGui.QIcon()
+        icon1.addPixmap(QtGui.QPixmap("../../../Downloads/iconfinder_music_player_black-05_3695045.png"),
+                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.commandLinkButton_2.setIcon(icon1)
+        self.commandLinkButton_2.setIconSize(QtCore.QSize(30, 30))
+        self.commandLinkButton_2.setObjectName("commandLinkButton_2")
+        self.commandLinkButton_2.clicked.connect(self.nextSong)
+        # </Command Link Button 2>
+
+        # </Command Link Button 3>
+        self.commandLinkButton_3 = QtWidgets.QPushButton(self.content_bar)
+        self.commandLinkButton_3.setGeometry(QtCore.QRect(40, 310, 41, 41))
+        self.commandLinkButton_3.setText("")
+        icon2 = QtGui.QIcon()
+        icon2.addPixmap(QtGui.QPixmap("../../../Downloads/iconfinder_music_player_black-06_3695054.png"),
+                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.commandLinkButton_3.setIcon(icon2)
+        self.commandLinkButton_3.setIconSize(QtCore.QSize(30, 30))
+        self.commandLinkButton_3.setObjectName("commandLinkButton_3")
+        self.commandLinkButton_3.clicked.connect(self.prevSong)
+
+
+        # </Command Link Button 3>
+
+        # </Marquee>
+        self.timeline = QtCore.QTimeLine()
+        self.timeline.setCurveShape(QtCore.QTimeLine.LinearCurve)
+        self.timeline.frameChanged.connect(self.setText)
+        self.timeline.finished.connect(self.nextScroll)
+        self.signalMapper = QtCore.QSignalMapper(self)
+        self.feed()
+        # </Marquee>
+
+        # </Feed>
+
+        # </Song Title>
+        self.label_2 = QtWidgets.QLabel(self.content_bar)
+        self.label_2.setGeometry(QtCore.QRect(28, 260, 221, 21))
+        font = QtGui.QFont()
+        font.setFamily("Segoi UI")
+        font.setPointSize(8)
+        self.label_2.setFont(font)
+        self.label_2.setObjectName("label_2")
+        # </Song Title>
+
+        # </Artist Name>
+        self.label_3 = QtWidgets.QLabel(self.content_bar)
+        self.label_3.setGeometry(QtCore.QRect(30, 240, 221, 21))
+        font = QtGui.QFont()
+        font.setFamily("Segoi UI")
+        font.setBold(True)
+        font.setPointSize(10)
+        self.label_3.setFont(font)
+        self.label_3.setObjectName("label_3")
+        # </Artist Name>
+
+        # </Song Progress>
+        self.progress_label = QtWidgets.QLabel(self.content_bar)
+        self.progress_label.setGeometry(QtCore.QRect(10, 295, 49, 16))
+        font = QtGui.QFont()
+        font.setFamily("Segoi UI")
+        font.setBold(True)
+        self.progress_label.setFont(font)
+        self.progress_label.setText("00:00")
+        # </Song Progress>
+
+        # </ Song Duration>
+        self.duration_label = QtWidgets.QLabel(self.content_bar)
+        self.duration_label.setGeometry(QtCore.QRect(205, 295, 49, 16))
+        font = QtGui.QFont()
+        font.setFamily("Segoi UI")
+        font.setBold(True)
+        self.duration_label.setFont(font)
+        self.duration_label.setText("00:00")
+        # </Song Duration>
+
+        self.verticalLayout.addWidget(self.content_bar)
+
+        # </Adding Widgets>
+        self.drop_shadow_layout.addWidget(self.drop_shadow_frame)
+        self.setCentralWidget(self.centralwidget)
+        # </Adding Widgets>
+
+        # </Album Art>
+        current_track_info = get_current_track()
+        url = current_track_info.get('cover art')
+        data = urllib.request.urlopen(url).read()
+        pixmap = QPixmap()
+        pixmap.loadFromData(data)
+        output = QtGui.QPixmap(pixmap.width(), pixmap.height())
+        output.fill(QtCore.Qt.transparent)
+
+        qp = QtGui.QPainter(output)
+        clipPath = QtGui.QPainterPath()
+        clipPath.addRoundedRect(QtCore.QRectF(pixmap.rect()), 40, 40)
+        qp.setClipPath(clipPath)
+        qp.drawPixmap(0, 0, pixmap)
+        qp.end()
+
+        self.label.setPixmap(QPixmap(output).scaled(241, 201, QtCore.Qt.KeepAspectRatio))
+        self.label.setMask(pixmap.mask())
+        self.label.show()
+
+        self.PinButton = QtWidgets.QPushButton(self.content_bar)
+        iconPin = QtGui.QIcon()
+        iconPin.addPixmap(QtGui.QPixmap("../../../Downloads/pin_outline.png"),
+                       QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.PinButton.setGeometry(QtCore.QRect(0, 10, 49, 16))
+        self.PinButton.clicked.connect(self.pin)
+        self.PinButton.setIcon(iconPin)
+        self.PinButton.setIconSize(QtCore.QSize(25, 25))
+        self.PinButton.show()
+
+        self.retranslateUi(cssden)
+        QtCore.QMetaObject.connectSlotsByName(self)
+        # </Album Art>
+
+        self.oldPos = self.pos()
+
+        self.show()
+
+
+
+    def prevSong(self):
+        spotify.previous_track(device_id=ID.get('id'))
+
+    def feed(self):
+        track_info = get_current_track()
+        fm = self.label.fontMetrics()
+        self.tl = int(self.label.width() / fm.averageCharWidth())
+        text = track_info.get('name')
+        delimiter = ' '
+        self.scroll = delimiter.join(text)
+        length = len(self.scroll)
+        lps = 4
+        duration = length * 1000 / lps
+        self.timeline.setDuration(int(duration))
+        self.timeline.setFrameRange(0, length)
+        self.timeline.start()
+
+    def pin(self):
+        on = bool(self.windowFlags() & Qt.WindowStaysOnTopHint)
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, not on)
+        self.show()
+
+    def nextSong(self):
+        spotify.next_track(device_id=ID.get('id'))
+
+    def setText(self, number_of_frame):
+        track_info = get_current_track()
+        if number_of_frame < self.tl:
+            start = 0
+        else:
+            start = number_of_frame - self.tl
+        text = (track_info.get('name')[start:number_of_frame])
+        self.label_3.setText(text)
+
+    def nextScroll(self):
+        self.feed()
+
+    def changeIcon(self):
+
+        if self.commandLinkButton.isChecked():
+
+            icon = QtGui.QIcon()
+            icon.addPixmap(QtGui.QPixmap("../../../Downloads/iconfinder_music_player_black-03_3695047.png"),
+                           QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            self.commandLinkButton.setIcon(icon)
+            self.commandLinkButton.setIconSize(QtCore.QSize(30, 30))
+
+        else:
+
+            icon = QtGui.QIcon()
+            icon.addPixmap(QtGui.QPixmap("../../../Downloads/iconfinder_music_player_black-01_3695059.png"),
+                           QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            self.commandLinkButton.setIcon(icon)
+            self.commandLinkButton.setIconSize(QtCore.QSize(30, 30))
+
+    def pinToggle(self):
+        if self.PinButton.isChecked():
+
+            icon = QtGui.QIcon()
+            icon.addPixmap(QtGui.QPixmap("../../../Downloads/iconfinder_music_player_black-03_3695047.png"),
+                           QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            self.PinButton.setIcon(icon)
+            self.PinButton.setIconSize(QtCore.QSize(30, 30))
+
+        else:
+
+            icon = QtGui.QIcon()
+            icon.addPixmap(QtGui.QPixmap("../../../Downloads/iconfinder_music_player_black-01_3695059.png"),
+                           QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            self.PinButton.setIcon(icon)
+            self.PinButton.setIconSize(QtCore.QSize(30, 30))
+
+    def startProgress(self):
+
+        if self.ptimer.isActive():
+            icon = QtGui.QIcon()
+            icon.addPixmap(QtGui.QPixmap("../../../Downloads/iconfinder_music_player_black-01_3695059.png"),
+                           QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            self.commandLinkButton.setIcon(icon)
+            self.commandLinkButton.setIconSize(QtCore.QSize(30, 30))
+            spotify.pause_playback(device_id=ID.get('id'))
+            self.ptimer.stop()
+
+        else:
+
+            track_info = get_current_track()
+            uri = {
+                "uris": [track_info.get('uri')]
+            }
+
+            icon1 = QtGui.QIcon()
+            icon1.addPixmap(QtGui.QPixmap("../../../Downloads/iconfinder_music_player_black-03_3695047.png"),
+                            QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            self.commandLinkButton.setIcon(icon1)
+            self.commandLinkButton.setIconSize(QtCore.QSize(30, 30))
+            spotify.start_playback(device_id=ID.get('id'),
+                                   uris=uri.get('uris'),
+                                   position_ms=track_info.get('progress'))
+
+            self.ptimer.start(100, self)
+
+    def timerEvent(self, event):
+        track_info = get_current_track()
+        if self.step >= (track_info.get('duration')):
+            self.ptimer.stop()
+
+            return
+
+        self.step = (track_info.get('progress'))
+        self.progressBar.setValue(self.step)
+
+    def clicked(self):
+        self.timestamp()
+        self.update()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.timestamp)
+        self.timer.start(500)
+
+    def timestamp(self):
+        current_track_info = get_current_track()
+        url = current_track_info.get('cover art')
+        data = urllib.request.urlopen(url).read()
+        pixmap = QPixmap()
+        pixmap.loadFromData(data)
+        output = QtGui.QPixmap(pixmap.width(), pixmap.height())
+        output.fill(QtCore.Qt.transparent)
+        qp = QtGui.QPainter(output)
+        clipPath = QtGui.QPainterPath()
+        clipPath.addRoundedRect(QtCore.QRectF(pixmap.rect()), 40, 40)
+        qp.setClipPath(clipPath)
+        qp.drawPixmap(0, 0, pixmap)
+        qp.end()
+        duration = current_track_info.get('duration')
+        progress = current_track_info.get('progress')
+        artists = current_track_info.get('artists')
+        track = current_track_info.get('name')
+        seconds = duration / 1000
+        progress_seconds = progress / 1000
+        self.url = current_track_info.get('cover art')
+        self.label_2.setText(str(artists))
+        self.label_3.setText(str(track))
+        self.duration_label.setText(str(cssden.convert(seconds)))
+        self.progress_label.setText(str(cssden.convert_progress(progress_seconds)))
+        self.label.setPixmap(QPixmap(output).scaled(241, 201, QtCore.Qt.KeepAspectRatio))
+        self.label.setMask(pixmap.mask())
+
+    def artist(self):
+        current_track_info = get_current_track()
+        value = current_track_info.get('artists')
+        self.label_2.setText(str(value))
+
+    def track(self):
+        current_track_info = get_current_track()
+        value = current_track_info.get('name')
+        self.label_3.setText(str(value))
+
+    def convert(self):
+        current_track_info = get_current_track()
+        duration = current_track_info.get('duration')
+        seconds = duration / 1000
+        return time.strftime("%M:%S", time.gmtime(seconds))
+
+    def convert_progress(self):
+        current_track_info = get_current_track()
+        progress = current_track_info.get('progress')
+        progress_seconds = progress / 1000
+        return time.strftime("%M:%S", time.gmtime(progress_seconds))
+
+    def CloseApp(self):
+        sysExit()
+
+    def update(self):
+        self.label_2.show()
+        self.label_3.show()
+        self.duration_label.show()
+        self.progress_label.show()
+        self.label.show()
+
+    def retranslateUi(self, MainWindow):
+        current_track_info = get_current_track()
+        _translate = QtCore.QCoreApplication.translate
+        self.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.label_2.setText(current_track_info.get('artists'))
+        self.label_3.setText(current_track_info.get('name'))
+
+    def center(self):
+        qr = self.frameGeometry()
+        cp = QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
+
+    def mousePressEvent(self, event):
+        self.oldPos = event.globalPos()
+
+    def mouseMoveEvent(self, event):
+        delta = QPoint(event.globalPos() - self.oldPos)
+        self.move(self.x() + delta.x(), self.y() + delta.y())
+        self.oldPos = event.globalPos()
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = cssden()
+    sys.exit(app.exec_())
